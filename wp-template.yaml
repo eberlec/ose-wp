@@ -1,0 +1,185 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "wp-mysql-example",
+    "annotations": {
+      "description": "Sample wordpress application with a MySQL database"
+    }
+  },
+  "labels": {
+    "template": "wp-mysql-example"
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "wp-service",
+        "annotations": {
+          "description": "Exposes the wordpress server"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "wordpress",
+            "port": 80,
+            "targetPort": 80
+          }
+        ],
+        "selector": {
+          "name": "wp-service"
+        }
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "wp-service",
+        "annotations": {
+          "description": "Defines how to deploy the wp"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Rolling"
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "wp-service"
+        },
+        "template": {
+          "metadata": {
+            "name": "wp-service",
+            "labels": {
+              "name": "wp-service"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "wordpress",
+                "image": "wordpress",
+                "ports": [
+                  {
+                    "containerPort": 80
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "WORDPRESS_DB_USER",
+                    "value": "wp_user"
+                  },
+                  {
+                    "name": "WORDPRESS_DB_PASSWORD",
+                    "value": "wp_pass"
+                  },
+                  {
+                    "name": "WORDPRESS_DB_NAME",
+                    "value": "wp_db"
+                  },
+                  {
+                    "name": "WORDPRESS_DB_HOST",
+                    "value": "mysql-service"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "mysql-service",
+        "annotations": {
+          "description": "Exposes the database server"
+        }
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "mysql",
+            "port": 3306,
+            "targetPort": 3306
+          }
+        ],
+        "selector": {
+          "name": "mysql-service"
+        }
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "mysql-service",
+        "annotations": {
+          "description": "Defines how to deploy the database"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Recreate"
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name": "mysql-service"
+        },
+        "template": {
+          "metadata": {
+            "name": "mysql-service",
+            "labels": {
+              "name": "mysql-service"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "mysql",
+                "image": "openshift/mysql-55-centos7",
+                "ports": [
+                  {
+                    "containerPort": 3306
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "MYSQL_ROOT_PASSWORD",
+                    "value": "rootpw"
+                  },
+                  {
+                    "name": "MYSQL_USER",
+                    "value": "wp_user"
+                  },
+                  {
+                    "name": "MYSQL_PASSWORD",
+                    "value": "wp_pass"
+                  },
+                  {
+                    "name": "MYSQL_DATABASE",
+                    "value": "wp_db"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
